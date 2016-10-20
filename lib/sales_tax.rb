@@ -3,12 +3,12 @@ TAX_RATES = {:basic_sales_tax => 0.1, :import_duty_tax => 0.05}.freeze
 
 class Float
   def round_with_precision(precision)
-    (self * 1/precision).round.to_f/(1/precision)
+    (self * 1/precision).ceil.to_f/(1/precision)
   end
 end
 
 class Product
-	def initialize(name, price, isImported = false, isExempted = false)
+	def initialize(name:, price:, isImported: false, isExempted: false)
 		@name = name
 		@price = price.to_f
     @isImported = isImported
@@ -41,6 +41,14 @@ class Cart
 		@product_catalog = []
 	end
 
+  def getTotalAmount
+    @total_amount
+  end
+
+  def getTotalTax
+    @total_tax
+  end
+
 	def insert(item, quantity)
 		item_tax = ((calculateBasicSalesTax(item) + calculateImportTax(item))*quantity*1.0).round_with_precision(0.05)
 		@total_tax = @total_tax + item_tax
@@ -49,7 +57,7 @@ class Cart
 		@product_catalog << quantity.to_s + ", " + item.getName + ", " + ('%.2f' % taxed_item).to_s
 	end
 
-	def printReceipt()
+	def printItems
 		@product_catalog << ("Sales Taxes: " + ('%.2f' % @total_tax).to_s)
 		@product_catalog << ("Total: " + ('%.2f' % @total_amount).to_s)
 		@product_catalog.join("\n")
@@ -69,13 +77,10 @@ class Cart
   end
 end
 
-
-#Main Application
-
 keywords = ["book", "chocolate", "pill", "food", "medicine", "novel"]
 cart = Cart.new
-f = File.open("input.txt", "r")
-f.each_line do |line|
+file = File.open("input.txt", "r")
+file.each_line do |line|
   line_arr = line.split(",").map(&:strip)
   quantity = line_arr[0]
   name = line_arr[1]
@@ -83,11 +88,11 @@ f.each_line do |line|
 	isImported = line.include?("imported")
 	isExempted = keywords.any? {|word| line.include?(word)}
 
-	item = Product.new(name, price, isImported, isExempted)
+	item = Product.new(name:name, price:price, isImported: isImported, isExempted: isExempted)
 	cart.insert(item, quantity.to_i)
 end
-f.close
+file.close
 
-f = File.open("output.txt", "w")
-f.write(cart.printReceipt)
-f.close
+file = File.open("output.txt", "w")
+file.write(cart.printItems)
+file.close
